@@ -1,0 +1,54 @@
+{
+  "dataset_title": "Data-Driven Smart Streetlighting: Optimizing Energy Usage Profiles Through Exploratory Data Analysis",
+  "dataset_type": "synthetic",
+  "synthetic_only_disclaimer": "No row is an actual street-level measurement. Do not report modeled comparisons as real-world evidence.",
+  "period": {
+    "start": "2025-01-01 00:00:00",
+    "end": "2025-12-31 23:00:00",
+    "frequency": "hourly"
+  },
+  "street_segments": 24,
+  "records": 210240,
+  "columns": 36,
+  "random_seed": 42,
+  "time_zone_convention": "timestamp_local is a timezone-naive local-time string for a synthetic South Indian city archetype.",
+  "comparison_caveat": "full_output_reference_kwh is a synthetic baseline; summary savings comparisons exclude simulated lighting-fault rows and flagged energy-meter spikes.",
+  "files": {
+    "smart_streetlighting_synthetic_dataset.csv": {
+      "sha256": "aa31faf5a4ecb9d727415ff29569b9c0581a00df49fbdf171a19ff282e921da4",
+      "bytes": 54575935
+    },
+    "generate_smart_streetlighting_dataset.py": {
+      "sha256": "216eff200a07fc3fb4193d24b60198c7d706ae35d3115114bd133ee77971ff73",
+      "bytes": 19579
+    },
+    "smart_streetlighting_data_dictionary.csv": {
+      "sha256": "96efa8a2eb9ba44b7b195c03623faf539b7e3004fba6b0e4eb320152ce9535aa",
+      "bytes": 3831
+    },
+    "smart_streetlighting_quality_report.md": {
+      "sha256": "844bca365216744762218225077e0176322ac6f7417c7340001d4e1f939a833c",
+      "bytes": 2242
+    },
+    "README_smart_streetlighting_dataset.md": {
+      "sha256": "45d01700eac5774dd36236e4a80a193e59af7876de58e74e38edab340de05e54",
+      "bytes": 4246
+    },
+    "smart_streetlighting_monthly_summary.csv": {
+      "sha256": "dcaa25f183df0981d35164c4d7d3aae588c199f390cbd1166847cc67671da8ab",
+      "bytes": 1440
+    },
+    "smart_streetlighting_zone_summary.csv": {
+      "sha256": "68bbfa57b46eddc3a051d4840f02a32e7965047bb53917ea876f5bd8b727918c",
+      "bytes": 757
+    },
+    "smart_streetlighting_eda_companion.xlsx": {
+      "sha256": "ef852f8ae90182c3e15d93e22ebf21452601981f510135fa1e09628ac0aa89e8",
+      "bytes": 533637
+    },
+    "requirements_smart_streetlighting.txt": {
+      "sha256": "0cd13c898112b75b318790635794237fcc75f3e215134195bc78ba7344cf0b0c",
+      "bytes": 24
+    }
+  }
+}

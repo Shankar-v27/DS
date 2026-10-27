@@ -1,0 +1,7 @@
+zone_type,street_segments,records,energy_consumption_kwh,full_output_reference_kwh,valid_energy_kwh,valid_full_output_reference_kwh,avg_traffic_count,avg_pedestrian_count,lighting_required_pct,fault_rows,flagged_sensor_rows,reference_comparison_savings_pct
+Arterial,5,43800,51203.52,56461.4,51185.3,56373.54,132.71,9.68,48.03,32,214,9.2
+Campus,3,26280,32889.35,37360.24,32889.06,37280.85,24.95,18.31,48.03,23,129,11.78
+Commercial,4,35040,24662.89,29620.05,24647.12,29595.82,62.67,30.09,48.03,11,185,16.72
+Highway,4,35040,38317.96,45354.23,38317.83,45332.4,172.23,1.13,48.03,10,181,15.47
+Industrial,3,26280,20338.21,24697.17,20333.34,24656.65,29.64,3.61,48.03,17,147,17.53
+Residential,5,43800,27777.02,41442.41,27765.83,41415.81,17.14,7.47,48.03,8,206,32.96

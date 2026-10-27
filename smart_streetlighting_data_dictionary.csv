@@ -1,0 +1,37 @@
+column_name,data_type,definition_and_notes
+record_id,String,Unique synthetic observation identifier.
+timestamp_local,Datetime string (YYYY-MM-DD HH:MM:SS),Start of the hourly observation interval; local time is represented without an explicit timezone suffix.
+date,Date string (YYYY-MM-DD),Calendar date extracted from timestamp_local.
+hour,Integer 0–23,Hour of day extracted from timestamp_local.
+day_of_week,Category,Weekday name.
+is_weekend,Binary 0/1,1 for Saturday or Sunday; otherwise 0.
+month,Integer 1–12,Calendar month.
+season,Category,"Synthetic South-Indian-style seasonal grouping: Cool/Dry, Hot/Pre-monsoon, Southwest monsoon, Northeast monsoon."
+street_id,Category,Stable identifier for one of the 24 synthetic street segments.
+street_name,String,Synthetic label; not a real street name or address.
+zone_type,Category,"Residential, Arterial, Commercial, Industrial, Campus, or Highway."
+road_class,Category,Road-use classification assigned to the synthetic segment.
+lamp_technology,Category,LED or High-pressure sodium (HPS).
+control_mode,Category,"Fixed, Scheduled dimming, or Adaptive dimming."
+luminaire_count,Integer,Number of luminaires connected to the street segment's simulated lighting circuit.
+rated_watts_per_luminaire,Integer watts,Rated input power per luminaire.
+traffic_count,Integer vehicles/hour,Synthetic vehicle count during the hourly interval.
+pedestrian_count,Integer people/hour,Synthetic pedestrian count during the hourly interval.
+weather_condition,Category,"Synthetic city-level hourly class: Clear, Partly cloudy, Cloudy, Rain, or Thunderstorm."
+temperature_c,Numeric °C,Synthetic hourly temperature with small street-level sensor noise.
+humidity_pct,Numeric percent,Synthetic relative humidity; limited to a plausible 20–100% range.
+rainfall_mm,Numeric mm/hour,Synthetic precipitation amount during the hourly interval.
+cloud_cover_pct,Numeric percent,"Synthetic cloud-cover estimate, 0–100%."
+visibility_km,Numeric km,"Synthetic visibility estimate, bounded to 0.4–12 km."
+ambient_light_lux,Numeric lux; some values missing,Synthetic natural ambient-light sensor reading. A small number of readings are intentionally missing or contain flagged sensor spikes.
+lighting_required_flag,Binary 0/1,Simulated operating decision based on latent ambient light being below 50 lux; a flagged ambient-sensor fault may therefore disagree with the recorded value.
+target_illuminance_lux,Numeric lux,"Synthetic target illuminance assumption based on zone/road type; this is a planning feature, not a measured road-surface result."
+commanded_dimming_pct,Numeric percent,"Controller-requested lamp level, 0–100%."
+measured_dimming_pct,Numeric percent; some values missing,"Simulated measured lamp level, with small measurement noise and zeros during simulated outages/off periods."
+lamp_status,Category,"Off, On, Dimmed, or Fault. Faults are simulated operational outages."
+energy_consumption_kwh,Numeric kWh/hour; positive,"Simulated circuit energy for the hourly interval, including a small standby draw. It is not a real meter reading."
+full_output_reference_kwh,Numeric kWh/hour,"Synthetic comparator: rated full output while lighting is required, plus small controller standby when lighting is not required."
+energy_savings_vs_full_output_pct,Numeric percent; may be missing,Record-level comparison against full_output_reference_kwh. Excluded for simulated lighting faults and flagged energy-meter spikes; not a validated city-wide saving estimate.
+sensor_anomaly_flag,Binary 0/1,"1 when a sensor anomaly, meter spike, or selected sensor missingness is deliberately injected."
+sensor_anomaly_type,String/category,"Semicolon-separated anomaly description(s), or None."
+data_quality_flag,Category,"OK, Sensor issue, or Lighting fault. Sensor issue takes precedence if both are present."
