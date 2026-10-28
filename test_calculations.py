@@ -67,5 +67,18 @@ class TestLuxAnalytics(unittest.TestCase):
         self.assertEqual(zone_sum['total_luminaires'].sum(), 447, "Total luminaires across 24 streets must equal 447.")
         self.assertEqual(len(zone_sum), 6, "Must contain all 6 zone types.")
 
+    def test_06_ml_model_training_and_inference(self):
+        """Verifies Random Forest ML model training, metrics, and inference."""
+        import ml_energy_predictor
+        model_dict = ml_energy_predictor.train_energy_model(self.df, sample_size=10000, random_state=42)
+        metrics = model_dict['metrics']
+        self.assertLess(metrics['mae'], 0.05, "ML model MAE should be < 0.05 kWh")
+        self.assertGreater(metrics['r2'], 0.98, "ML model R2 should be > 0.98")
+        
+        sample = self.df.iloc[0][ml_energy_predictor.NUMERICAL_FEATURES + ml_energy_predictor.CATEGORICAL_FEATURES].to_dict()
+        pred = ml_energy_predictor.predict_instance(model_dict, sample)
+        self.assertGreater(pred, 0.0, "Predicted energy must be positive")
+        self.assertAlmostEqual(pred, self.df.iloc[0]['energy_consumption_kwh'], delta=0.2)
+
 if __name__ == "__main__":
     unittest.main()

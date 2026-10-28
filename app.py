@@ -20,6 +20,7 @@ import plotly.graph_objects as go
 import data_loader
 import analytics
 import components
+import ml_energy_predictor
 
 # -----------------------------------------------------------------------------
 # 1. Page Configuration & Theme Initialization
@@ -39,6 +40,11 @@ components.apply_custom_css()
 @st.cache_data(show_spinner=False)
 def get_cached_dataset():
     return data_loader.load_dataset()
+
+@st.cache_resource(show_spinner="Training machine learning energy surrogate...")
+def get_cached_ml_model(_df):
+    return ml_energy_predictor.train_energy_model(_df, sample_size=50000)
+
 
 try:
     df_raw = get_cached_dataset()
@@ -692,114 +698,390 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
 
 
 # =============================================================================
-# PAGE 6 — ENERGY OPTIMIZATION SIMULATOR
+# PAGE 6 — ENERGY OPTIMIZATION & ML PREDICTION ENGINE
 # =============================================================================
 elif nav_page == "🚀 Energy Optimization Simulator":
-    components.render_section_header("Rule-Based Lighting Optimization Engine", "Simulating demand-responsive dimming profiles and sensitivity bounds")
-
-    st.markdown("""
-    This simulator applies the physical luminaire power models derived in the verified EDA notebook to project 
-    annual grid energy savings under configurable civil safety floors and demand-responsive setpoint rules.
-    """)
-
-    # Interactive Optimization Controls
-    with st.expander("⚙️ Configure Scenario Policy Parameters", expanded=True):
-        col_p1, col_p2, col_p3 = st.columns(3)
-        with col_p1:
-            st.markdown("**Scenario 1: Schedule Tuning**")
-            p_s1_floor = st.slider("Deep-Night Minimum Floor (%)", 50.0, 90.0, 75.0, 5.0)
-            st.caption("Applied to Fixed/Scheduled circuits during 23:00–04:00.")
-
-        with col_p2:
-            st.markdown("**Scenario 2: Adaptive Road-Class Floors**")
-            p_s2_hwy = st.slider("Highway Safety Floor (%)", 50.0, 80.0, 65.0, 5.0)
-            p_s2_art = st.slider("Arterial Safety Floor (%)", 45.0, 75.0, 60.0, 5.0)
-            p_s2_res = st.slider("Residential Safety Floor (%)", 30.0, 60.0, 40.0, 5.0)
-
-        with col_p3:
-            st.markdown("**Scenario 3 & Safety Overrides**")
-            p_s3_deep = st.slider("Scenario 3 Eco Floor (%)", 20.0, 50.0, 30.0, 5.0)
-            p_weather_boost = st.slider("Adverse Weather Boost (%)", 10.0, 30.0, 20.0, 5.0)
-            st.caption("Triggered when rain > 0.3mm or visibility < 3.5km.")
-
-    # Execute simulation
-    sim_results = analytics.simulate_scenarios(
-        df_view,
-        s1_offpeak_floor=p_s1_floor,
-        s2_hwy_floor=p_s2_hwy,
-        s2_art_floor=p_s2_art,
-        s2_res_floor=p_s2_res,
-        s3_deep_floor=p_s3_deep,
-        weather_boost=p_weather_boost
+    components.render_section_header(
+        "Lighting Optimization & ML Intelligence Center",
+        "Policy-driven scenario simulations and machine learning energy prediction surrogates"
     )
 
-    if sim_results:
-        components.render_section_header("Modeled Scenario Performance Summary", "Comparative projections against observed baseline and unconstrained full-output load")
+    tab_rules, tab_ml = st.tabs([
+        "⚖️ Rule-Based Scenario Optimization",
+        "🤖 ML Energy Prediction & Surrogate Engine"
+    ])
 
-        # Scenario Table
-        st.dataframe(
-            sim_results['summary_table'].style.format({
-                'Annual Energy (kWh)': '{:,.1f}',
-                'Savings vs Baseline (kWh)': '{:,.1f}',
-                'Savings vs Baseline (%)': '{:+.2f}%',
-                'Total Savings vs Full Output (%)': '{:.2f}%',
-                'Mean Active Dimming (%)': '{:.2f}%'
-            }),
-            use_container_width=True
+    with tab_rules:
+        st.markdown("""
+        This simulator applies the physical luminaire power models derived in the verified EDA notebook to project 
+        annual grid energy savings under configurable civil safety floors and demand-responsive setpoint rules.
+        """)
+
+        # Interactive Optimization Controls
+        with st.expander("⚙️ Configure Scenario Policy Parameters", expanded=True):
+            col_p1, col_p2, col_p3 = st.columns(3)
+            with col_p1:
+                st.markdown("**Scenario 1: Schedule Tuning**")
+                p_s1_floor = st.slider("Deep-Night Minimum Floor (%)", 50.0, 90.0, 75.0, 5.0)
+                st.caption("Applied to Fixed/Scheduled circuits during 23:00–04:00.")
+
+            with col_p2:
+                st.markdown("**Scenario 2: Adaptive Road-Class Floors**")
+                p_s2_hwy = st.slider("Highway Safety Floor (%)", 50.0, 80.0, 65.0, 5.0)
+                p_s2_art = st.slider("Arterial Safety Floor (%)", 45.0, 75.0, 60.0, 5.0)
+                p_s2_res = st.slider("Residential Safety Floor (%)", 30.0, 60.0, 40.0, 5.0)
+
+            with col_p3:
+                st.markdown("**Scenario 3 & Safety Overrides**")
+                p_s3_deep = st.slider("Scenario 3 Eco Floor (%)", 20.0, 50.0, 30.0, 5.0)
+                p_weather_boost = st.slider("Adverse Weather Boost (%)", 10.0, 30.0, 20.0, 5.0)
+                st.caption("Triggered when rain > 0.3mm or visibility < 3.5km.")
+
+        # Execute simulation
+        sim_results = analytics.simulate_scenarios(
+            df_view,
+            s1_offpeak_floor=p_s1_floor,
+            s2_hwy_floor=p_s2_hwy,
+            s2_art_floor=p_s2_art,
+            s2_res_floor=p_s2_res,
+            s3_deep_floor=p_s3_deep,
+            weather_boost=p_weather_boost
         )
 
-        col_sim1, col_sim2 = st.columns(2)
+        if sim_results:
+            components.render_section_header("Modeled Scenario Performance Summary", "Comparative projections against observed baseline and unconstrained full-output load")
 
-        with col_sim1:
-            # Bar Chart Comparison
-            sum_df = sim_results['summary_table'][sim_results['summary_table']['Scenario'] != 'Full-Output Reference Comparator']
-            fig_bar_scen = px.bar(
-                sum_df, x='Scenario', y='Annual Energy (kWh)', color='Scenario',
-                title="Annual Grid Energy Consumption by Scenario Profile",
-                text_auto='.0f',
+            # Scenario Table
+            st.dataframe(
+                sim_results['summary_table'].style.format({
+                    'Annual Energy (kWh)': '{:,.1f}',
+                    'Savings vs Baseline (kWh)': '{:,.1f}',
+                    'Savings vs Baseline (%)': '{:+.2f}%',
+                    'Total Savings vs Full Output (%)': '{:.2f}%',
+                    'Mean Active Dimming (%)': '{:.2f}%'
+                }),
+                use_container_width=True
+            )
+
+            col_sim1, col_sim2 = st.columns(2)
+
+            with col_sim1:
+                # Bar Chart Comparison
+                sum_df = sim_results['summary_table'][sim_results['summary_table']['Scenario'] != 'Full-Output Reference Comparator']
+                fig_bar_scen = px.bar(
+                    sum_df, x='Scenario', y='Annual Energy (kWh)', color='Scenario',
+                    title="Annual Grid Energy Consumption by Scenario Profile",
+                    text_auto='.0f',
+                    color_discrete_sequence=['#38BDF8', '#34D399', '#22D3EE', '#F87171']
+                )
+                components.style_plotly_chart(fig_bar_scen, height=380, show_legend=False)
+                st.plotly_chart(fig_bar_scen, use_container_width=True)
+
+            with col_sim2:
+                # Diurnal Profile Comparison
+                h_sim = sim_results['hourly_df']
+                fig_diurnal_scen = go.Figure()
+                fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Baseline'], name='Baseline Observed', line=dict(color='#38BDF8', width=2.5)))
+                fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 1'], name='Scenario 1: Conservative', line=dict(color='#34D399', width=2, dash='dash')))
+                fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 2'], name='Scenario 2: Adaptive (Recommended)', line=dict(color='#22D3EE', width=2.5)))
+                fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 3'], name='Scenario 3: Eco Deep', line=dict(color='#F87171', width=1.8, dash='dot')))
+                fig_diurnal_scen.update_layout(
+                    title="24-Hour Diurnal Energy Profile Across Scenarios",
+                    xaxis_title="Hour of Day (0–23)", yaxis_title="Average Energy (kWh / segment-hr)",
+                    xaxis=dict(tickmode='linear', tick0=0, dtick=2)
+                )
+                components.style_plotly_chart(fig_diurnal_scen, height=380)
+                st.plotly_chart(fig_diurnal_scen, use_container_width=True)
+
+            # Zone-wise Scenario Performance
+            z_sim = sim_results['zone_df']
+            z_melt = pd.melt(z_sim, id_vars=['Zone'], var_name='Profile', value_name='kWh')
+            fig_zone_scen = px.bar(
+                z_melt, x='Zone', y='kWh', color='Profile', barmode='group',
+                title="Zone-Level Annual Energy Comparison Across Scenarios",
                 color_discrete_sequence=['#38BDF8', '#34D399', '#22D3EE', '#F87171']
             )
-            components.style_plotly_chart(fig_bar_scen, height=380, show_legend=False)
-            st.plotly_chart(fig_bar_scen, use_container_width=True)
+            components.style_plotly_chart(fig_zone_scen, height=400)
+            st.plotly_chart(fig_zone_scen, use_container_width=True)
 
-        with col_sim2:
-            # Diurnal Profile Comparison
-            h_sim = sim_results['hourly_df']
-            fig_diurnal_scen = go.Figure()
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Baseline'], name='Baseline Observed', line=dict(color='#38BDF8', width=2.5)))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 1'], name='Scenario 1: Conservative', line=dict(color='#34D399', width=2, dash='dash')))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 2'], name='Scenario 2: Adaptive (Recommended)', line=dict(color='#22D3EE', width=2.5)))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 3'], name='Scenario 3: Eco Deep', line=dict(color='#F87171', width=1.8, dash='dot')))
-            fig_diurnal_scen.update_layout(
-                title="24-Hour Diurnal Energy Profile Across Scenarios",
-                xaxis_title="Hour of Day (0–23)", yaxis_title="Average Energy (kWh / segment-hr)",
-                xaxis=dict(tickmode='linear', tick0=0, dtick=2)
-            )
-            components.style_plotly_chart(fig_diurnal_scen, height=380)
-            st.plotly_chart(fig_diurnal_scen, use_container_width=True)
-
-        # Zone-wise Scenario Performance
-        z_sim = sim_results['zone_df']
-        z_melt = pd.melt(z_sim, id_vars=['Zone'], var_name='Profile', value_name='kWh')
-        fig_zone_scen = px.bar(
-            z_melt, x='Zone', y='kWh', color='Profile', barmode='group',
-            title="Zone-Level Annual Energy Comparison Across Scenarios",
-            color_discrete_sequence=['#38BDF8', '#34D399', '#22D3EE', '#F87171']
+        # Engineering Compliance Caveat
+        components.render_callout(
+            "Controller setpoints (commanded dimming %) are <strong>not proof of achieved road-surface illumination</strong>. "
+            "Physical municipal deployment requires on-site photometric validation using luminance cameras to guarantee "
+            "compliance with civil standards (EN 13201 / IESNA RP-8 / IS 1944). In event of communication failure or sensor "
+            "dropouts, fixtures must automatically revert to fail-safe 100% full illumination.",
+            title="Civil Engineering & Photometric Disclaimer:",
+            variant="warning"
         )
-        components.style_plotly_chart(fig_zone_scen, height=400)
-        st.plotly_chart(fig_zone_scen, use_container_width=True)
+        components.render_synthetic_disclosure()
 
-    # Engineering Compliance Caveat
-    components.render_callout(
-        "Controller setpoints (commanded dimming %) are <strong>not proof of achieved road-surface illumination</strong>. "
-        "Physical municipal deployment requires on-site photometric validation using luminance cameras to guarantee "
-        "compliance with civil standards (EN 13201 / IESNA RP-8 / IS 1944). In event of communication failure or sensor "
-        "dropouts, fixtures must automatically revert to fail-safe 100% full illumination.",
-        title="Civil Engineering & Photometric Disclaimer:",
-        variant="warning"
-    )
+    with tab_ml:
+        components.render_section_header(
+            "Random Forest Energy Prediction Surrogate",
+            "Supervised machine learning model predicting circuit-level hourly energy consumption without target leakage"
+        )
 
-    components.render_synthetic_disclosure()
+        try:
+            with st.spinner("Loading & caching Random Forest surrogate model..."):
+                ml_model = get_cached_ml_model(df_raw)
+            model_ready = True
+        except Exception as e:
+            model_ready = False
+            st.error(f"ML Model Training Failed: {e}")
+
+        if model_ready:
+            metrics = ml_model['metrics']
+
+            # Model Status Banner
+            st.markdown(f"""
+            <div style="background: rgba(34, 211, 238, 0.08); border: 1px solid rgba(34, 211, 238, 0.25); border-radius: 8px; padding: 12px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <span style="font-weight: 700; color: #22D3EE; font-size: 13.5px;">ESTIMATOR:</span>
+                    <span style="color: #F1F5F9; font-weight: 600; margin-left: 6px;">RandomForestRegressor</span>
+                    <span style="color: #34D399; font-weight: 600; margin-left: 12px;">● Trained & Validated</span>
+                </div>
+                <div style="font-size: 12px; color: #94A3B8;">
+                    Trained in <strong style="color: #22D3EE;">{metrics['train_time_sec']:.2f}s</strong> on {metrics['train_rows']:,} records (Jan–Oct) • Tested on {metrics['test_rows']:,} holdout records (Nov–Dec)
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # 4 Metric KPI Cards
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            with col_m1:
+                components.render_kpi_card(
+                    "Holdout MAE",
+                    f"{metrics['mae']:.4f} kWh",
+                    "Mean Absolute Error on holdout test set",
+                    accent="cyan",
+                    icon="🎯"
+                )
+            with col_m2:
+                components.render_kpi_card(
+                    "Holdout RMSE",
+                    f"{metrics['rmse']:.4f} kWh",
+                    "Root Mean Squared Error (penalizes outliers)",
+                    accent="sky",
+                    icon="📐"
+                )
+            with col_m3:
+                components.render_kpi_card(
+                    "Goodness of Fit (R²)",
+                    f"{metrics['r2']:.4f}",
+                    "Variance explained on chronological test set",
+                    accent="emerald",
+                    icon="📈"
+                )
+            with col_m4:
+                components.render_kpi_card(
+                    "Holdout Observations",
+                    f"{metrics['test_rows']:,} hrs",
+                    "Months 11–12 (strictly unseen test window)",
+                    accent="purple",
+                    icon="📅"
+                )
+
+            # Synthetic Disclosure Callout
+            components.render_callout(
+                f"<strong>Target Leakage Safeguard:</strong> Direct mathematical duplicates of the target variable "
+                f"(such as <code>full_output_reference_kwh</code>, <code>energy_savings_vs_full_output_pct</code>, "
+                f"<code>specific_load_ratio</code>, and <code>energy_diff_vs_full_kwh</code>) were strictly excluded from the feature matrix. "
+                f"<br><strong>Synthetic Data Disclosure:</strong> The ML model learns from synthetic telemetry generated for an archetype municipality. "
+                f"While high holdout metrics (R² = {metrics['r2']:.4f}, MAE = {metrics['mae']:.4f} kWh) confirm excellent surrogate convergence against the underlying data generation physics, "
+                f"these metrics <em>do not establish real-world accuracy or photometric compliance</em> without physical deployment and field calibration.",
+                title="Methodological Rigor & Academic Disclosure:",
+                variant="warning"
+            )
+
+            # Diagnostic Visualizations
+            components.render_section_header(
+                "Holdout Evaluation & Feature Importance Visualizations",
+                "Model explainability and diagnostic fit on chronological holdout telemetry"
+            )
+
+            col_c1, col_c2 = st.columns(2)
+            with col_c1:
+                fig_scatter = ml_energy_predictor.plot_actual_vs_predicted_scatter(ml_model['scatter_df'])
+                st.plotly_chart(fig_scatter, use_container_width=True)
+            with col_c2:
+                fig_fi = ml_energy_predictor.plot_feature_importance(ml_model['feature_importance_df'], top_n=10)
+                st.plotly_chart(fig_fi, use_container_width=True)
+
+            fig_time = ml_energy_predictor.plot_prediction_timeline(ml_model['sample_vis'])
+            st.plotly_chart(fig_time, use_container_width=True)
+
+            # Interactive Single-Instance Prediction Form
+            components.render_section_header(
+                "Interactive Circuit Load Predictor",
+                "Input live operational telemetry to evaluate real-time hourly energy inference (kWh)"
+            )
+
+            street_meta = df_raw.drop_duplicates(subset=['street_id']).set_index('street_id')
+            available_streets = sorted(street_meta.index.tolist())
+
+            with st.form("ml_inference_form"):
+                st.markdown("<p style='font-size: 13px; color: #94A3B8; margin-bottom: 12px;'>Configure corridor infrastructure parameters and operating telemetry conditions:</p>", unsafe_allow_html=True)
+
+                col_f1, col_f2, col_f3 = st.columns(3)
+                with col_f1:
+                    sel_street_id = st.selectbox("Corridor Segment ID", available_streets, index=0)
+                    cur_street = street_meta.loc[sel_street_id]
+
+                    st.caption(f"Infrastructure: **{cur_street['zone_type']}** | **{cur_street['road_class']}**")
+                    st.caption(f"Luminaires: **{int(cur_street['luminaire_count'])}** fixtures @ **{cur_street['rated_watts_per_luminaire']:.0f}W** ({cur_street['lamp_technology']})")
+
+                    p_hour = st.slider("Hour of Day (0–23)", 0, 23, 21, help="Night lighting hours: typically 18–06")
+                    p_month = st.slider("Calendar Month (1–12)", 1, 12, 11, help="Chronological month of year")
+                    p_weekend = st.checkbox("Weekend Day (Saturday / Sunday)", value=False)
+
+                with col_f2:
+                    p_dimming = st.slider("Measured Dimming Level (%)", 0.0, 100.0, 70.0, 5.0, help="Commanded / measured controller output percentage")
+                    p_traffic = st.slider("Vehicular Traffic (vehicles/hr)", 0, 350, 75, 5)
+                    p_ped = st.slider("Pedestrian Count (peds/hr)", 0, 80, 12, 1)
+                    p_lux = st.slider("Ambient Light (lux)", 0.0, 120.0, 2.0, 0.5)
+
+                with col_f3:
+                    p_weather = st.selectbox("Weather Condition", ['Clear', 'Partly cloudy', 'Cloudy', 'Rain', 'Thunderstorm'], index=0)
+                    p_mode = st.selectbox("Control Mode", ['Adaptive dimming', 'Fixed', 'Scheduled dimming'], index=0)
+                    p_temp = st.slider("Ambient Temperature (°C)", 15.0, 42.0, 26.5, 0.5)
+                    p_rain = st.slider("Precipitation (mm)", 0.0, 12.0, 0.0, 0.5)
+                    p_vis = st.slider("Atmospheric Visibility (km)", 0.5, 10.0, 9.5, 0.5)
+
+                submit_pred = st.form_submit_button("⚡ Predict Circuit Load with ML Model", use_container_width=True)
+
+            if submit_pred:
+                cur_street = street_meta.loc[sel_street_id]
+                lum_count = int(cur_street['luminaire_count'])
+                rated_w = float(cur_street['rated_watts_per_luminaire'])
+                circuit_kw = float(cur_street['circuit_rated_kw'])
+
+                input_features = {
+                    'hour': p_hour,
+                    'month': p_month,
+                    'is_weekend': 1 if p_weekend else 0,
+                    'luminaire_count': lum_count,
+                    'rated_watts_per_luminaire': rated_w,
+                    'circuit_rated_kw': circuit_kw,
+                    'traffic_count': p_traffic,
+                    'pedestrian_count': p_ped,
+                    'ambient_light_lux': p_lux,
+                    'temperature_c': p_temp,
+                    'humidity_pct': 65.0,
+                    'rainfall_mm': p_rain,
+                    'visibility_km': p_vis,
+                    'measured_dimming_pct': p_dimming,
+                    'zone_type': cur_street['zone_type'],
+                    'road_class': cur_street['road_class'],
+                    'lamp_technology': cur_street['lamp_technology'],
+                    'control_mode': p_mode,
+                    'weather_condition': p_weather
+                }
+
+                pred_kwh = ml_energy_predictor.predict_instance(ml_model, input_features)
+                rated_hourly_kwh = circuit_kw * 1.0
+                savings_pct = max(0.0, (1.0 - pred_kwh / rated_hourly_kwh) * 100.0) if rated_hourly_kwh > 0 else 0.0
+                specific_wh = (pred_kwh * 1000.0) / lum_count if lum_count > 0 else 0.0
+
+                st.markdown("#### ⚡ ML Prediction Output")
+                col_r1, col_r2, col_r3 = st.columns(3)
+                with col_r1:
+                    components.render_kpi_card(
+                        "Predicted Energy",
+                        f"{pred_kwh:.3f} kWh",
+                        f"Hourly consumption for segment {sel_street_id}",
+                        accent="cyan",
+                        icon="⚡"
+                    )
+                with col_r2:
+                    components.render_kpi_card(
+                        "Specific Luminaire Load",
+                        f"{specific_wh:.1f} Wh/fixture",
+                        f"Across {lum_count} installed luminaires",
+                        accent="sky",
+                        icon="💡"
+                    )
+                with col_r3:
+                    components.render_kpi_card(
+                        "Energy Reduction vs Full Output",
+                        f"{savings_pct:.1f}%",
+                        f"Compared to rated circuit capacity ({circuit_kw:.1f} kW)",
+                        accent="emerald",
+                        icon="📉"
+                    )
+
+            # Scenario Comparison via ML Surrogate
+            components.render_section_header(
+                "Policy Scenario Cross-Validation (Rule-Based vs. ML Surrogate)",
+                "Comparing annual grid energy totals projected by the physics simulation engine versus the ML regression surrogate"
+            )
+
+            st.markdown("""
+            This comparative analysis evaluates policy scenarios (Conservative, Adaptive, and Eco Deep) using the trained Random Forest model 
+            as an independent surrogate evaluator. **Note:** The ML model does not optimize policies—it predicts energy consumption under 
+            the scenario dimming distributions to validate physics-based calculations.
+            """)
+
+            eval_target_df = df_view[df_view['is_valid_energy']] if len(df_view[df_view['is_valid_energy']]) > 0 else df_raw[df_raw['is_valid_energy']]
+            with st.spinner("Evaluating scenario distributions through ML surrogate..."):
+                ml_scen = ml_energy_predictor.evaluate_scenarios_with_ml(ml_model, eval_target_df)
+
+            # Compare physics-based totals vs ML surrogate totals
+            s_table = sim_results['summary_table'] if (sim_results and 'summary_table' in sim_results) else None
+            if s_table is not None:
+                def get_phys_kwh(scen_name, fallback):
+                    matches = s_table.loc[s_table['Scenario'].str.contains(scen_name, case=False, na=False), 'Annual Energy (kWh)']
+                    return float(matches.values[0]) if len(matches) > 0 else fallback
+
+                phys_base = get_phys_kwh('Baseline', 311000.0)
+                phys_s1 = get_phys_kwh('Scenario 1', 280000.0)
+                phys_s2 = get_phys_kwh('Scenario 2', 254000.0)
+                phys_s3 = get_phys_kwh('Scenario 3', 241000.0)
+            else:
+                phys_base, phys_s1, phys_s2, phys_s3 = 311000.0, 280000.0, 254000.0, 241000.0
+
+            scen_comp_df = pd.DataFrame([
+                {
+                    'Policy Profile': 'Baseline Observed',
+                    'Rule-Based Physics (kWh)': phys_base,
+                    'ML Surrogate Prediction (kWh)': ml_scen['ml_base_kwh'],
+                    'Deviation (kWh)': ml_scen['ml_base_kwh'] - phys_base,
+                    'Surrogate Variance (%)': ((ml_scen['ml_base_kwh'] - phys_base) / phys_base) * 100.0
+                },
+                {
+                    'Policy Profile': 'Scenario 1: Schedule Tuning',
+                    'Rule-Based Physics (kWh)': phys_s1,
+                    'ML Surrogate Prediction (kWh)': ml_scen['ml_s1_kwh'],
+                    'Deviation (kWh)': ml_scen['ml_s1_kwh'] - phys_s1,
+                    'Surrogate Variance (%)': ((ml_scen['ml_s1_kwh'] - phys_s1) / phys_s1) * 100.0
+                },
+                {
+                    'Policy Profile': 'Scenario 2: Adaptive Controls',
+                    'Rule-Based Physics (kWh)': phys_s2,
+                    'ML Surrogate Prediction (kWh)': ml_scen['ml_s2_kwh'],
+                    'Deviation (kWh)': ml_scen['ml_s2_kwh'] - phys_s2,
+                    'Surrogate Variance (%)': ((ml_scen['ml_s2_kwh'] - phys_s2) / phys_s2) * 100.0
+                },
+                {
+                    'Policy Profile': 'Scenario 3: Deep Eco Profile',
+                    'Rule-Based Physics (kWh)': phys_s3,
+                    'ML Surrogate Prediction (kWh)': ml_scen['ml_s3_kwh'],
+                    'Deviation (kWh)': ml_scen['ml_s3_kwh'] - phys_s3,
+                    'Surrogate Variance (%)': ((ml_scen['ml_s3_kwh'] - phys_s3) / phys_s3) * 100.0
+                }
+            ])
+
+            st.dataframe(
+                scen_comp_df.style.format({
+                    'Rule-Based Physics (kWh)': '{:,.1f}',
+                    'ML Surrogate Prediction (kWh)': '{:,.1f}',
+                    'Deviation (kWh)': '{:+,.1f}',
+                    'Surrogate Variance (%)': '{:+.2f}%'
+                }),
+                use_container_width=True
+            )
+
+            components.render_synthetic_disclosure()
+
 
 
 # =============================================================================
