@@ -222,12 +222,10 @@ def simulate_scenarios(df: pd.DataFrame,
     is_deep_night = ((h_arr >= 23) | (h_arr <= 4)) & (req_arr == 1)
     bad_weather_s1 = (rain_arr > 0.4) | (vis_arr < 4.0)
 
-    for i in range(len(valid_df)):
-        if req_arr[i] == 1 and not bad_weather_s1[i] and is_deep_night[i]:
-            z = zone_arr[i]
-            floor = s1_offpeak_floor if z in ['Arterial', 'Highway'] else (s1_offpeak_floor - 10.0 if z in ['Commercial', 'Industrial'] else s1_offpeak_floor - 20.0)
-            if mode_arr[i] in ['Fixed', 'Scheduled dimming']:
-                s1_dim[i] = min(s1_dim[i], floor)
+    s1_floors = np.where(np.isin(zone_arr, ['Arterial', 'Highway']), s1_offpeak_floor,
+                np.where(np.isin(zone_arr, ['Commercial', 'Industrial']), s1_offpeak_floor - 10.0, s1_offpeak_floor - 20.0))
+    s1_applicable = is_deep_night & (~bad_weather_s1) & np.isin(mode_arr, ['Fixed', 'Scheduled dimming'])
+    s1_dim = np.where(s1_applicable, np.minimum(s1_dim, s1_floors), s1_dim)
 
     s1_kwh = calculate_circuit_kwh(s1_dim, req_arr, circuit_kw, is_led)
 

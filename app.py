@@ -1,6 +1,6 @@
 """
 LUX - Smart Streetlighting Intelligence Platform
-Main Streamlit Application Entrypoint
+Production Enterprise Streamlit Application Entrypoint
 
 Project Theme: Data-Driven Smart Streetlighting: Optimizing Energy Usage Profiles Through Exploratory Data Analysis.
 """
@@ -26,7 +26,7 @@ import components
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="LUX | Smart Streetlighting",
-    page_icon="💡",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -52,15 +52,16 @@ except Exception as e:
 # 3. Sidebar Navigation & Global Filters
 # -----------------------------------------------------------------------------
 with st.sidebar:
+    # Brand Header
     st.markdown("""
-    <div style="padding: 10px 0 16px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px;">
-        <span style="font-size: 22px; font-weight: 800; background: linear-gradient(90deg, #00e5ff 0%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            LUX INTELLIGENCE
-        </span>
-        <div style="font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px;">
-            Municipal Smart Lighting Analytics
+    <div class="lux-sidebar-brand">
+        <div class="lux-brand-icon-box">⚡</div>
+        <div>
+            <div class="lux-brand-name">LUX</div>
+            <div class="lux-brand-tagline">Smart Streetlight Intelligence</div>
         </div>
     </div>
+    <div class="lux-sidebar-section-title">NAVIGATION PORTAL</div>
     """, unsafe_allow_html=True)
 
     nav_page = st.radio(
@@ -74,11 +75,13 @@ with st.sidebar:
             "🚀 Energy Optimization Simulator",
             "📥 Reports & Data Export"
         ],
-        index=0
+        index=0,
+        label_visibility="collapsed"
     )
 
-    st.markdown("---")
-    st.markdown("<div style='font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;'>GLOBAL FILTERS</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="lux-sidebar-section-title" style="margin-top: 24px;">GLOBAL FILTERS</div>
+    """, unsafe_allow_html=True)
 
     # Reset Filters Button
     if st.button("🔄 Reset All Filters", use_container_width=True):
@@ -135,12 +138,17 @@ components.render_header(
     total_records=len(df_raw),
     date_start=df_raw['date_dt'].min().strftime('%Y-%m-%d'),
     date_end=df_raw['date_dt'].max().strftime('%Y-%m-%d'),
-    current_filtered_count=len(df_view)
+    current_filtered_count=len(df_view),
+    unique_streets=kpis['unique_streets']
 )
 
 # Empty State Warning
 if len(df_view) == 0:
-    st.warning("⚠️ No records match the active filter criteria. Please broaden your sidebar selections or click 'Reset All Filters'.")
+    components.render_callout(
+        "No records match the active sidebar filter criteria. Please broaden your selections or click 'Reset All Filters'.",
+        title="Zero Filter Matches",
+        variant="warning"
+    )
     st.stop()
 
 
@@ -148,7 +156,7 @@ if len(df_view) == 0:
 # PAGE 1 — EXECUTIVE OVERVIEW
 # =============================================================================
 if nav_page == "📊 Executive Overview":
-    components.render_section_header("System Overview & Key Performance Indicators", "Executive telemetry across municipal lighting circuits")
+    components.render_section_header("System Overview & Key Performance Indicators", "Executive operational telemetry across municipal lighting circuits")
 
     # Row 1: Primary Energy & Scope Metrics
     c1, c2, c3, c4 = st.columns(4)
@@ -157,28 +165,32 @@ if nav_page == "📊 Executive Overview":
             "Total Observed Energy",
             f"{kpis['total_energy_kwh']:,.1f} kWh",
             f"Valid subset: {kpis['valid_energy_kwh']:,.1f} kWh",
-            accent="cyan"
+            accent="cyan",
+            icon="⚡"
         )
     with c2:
         components.render_kpi_card(
             "Full-Output Reference",
             f"{kpis['full_output_kwh']:,.1f} kWh",
             "Theoretical continuous load",
-            accent="indigo"
+            accent="purple",
+            icon="💡"
         )
     with c3:
         components.render_kpi_card(
-            "Baseline Savings %",
+            "Baseline Savings",
             f"{kpis['valid_savings_pct']:.2f}%",
             f"{kpis['valid_diff_kwh']:,.0f} kWh reduction vs. full",
-            accent="emerald"
+            accent="emerald",
+            icon="🌿"
         )
     with c4:
         components.render_kpi_card(
             "Active Grid Scope",
             f"{kpis['unique_streets']} Segments",
             f"{kpis['total_records']:,} observations (2025)",
-            accent="sky"
+            accent="sky",
+            icon="🛣️"
         )
 
     # Row 2: Operational Quality & Reliability Metrics
@@ -188,32 +200,35 @@ if nav_page == "📊 Executive Overview":
             "Mean Night Dimming",
             f"{kpis['avg_measured_dimming']:.1f}%",
             f"Command setpoint: {kpis['avg_commanded_dimming']:.1f}%",
-            accent="cyan"
+            accent="cyan",
+            icon="🌙"
         )
     with c6:
         components.render_kpi_card(
             "Cleanliness Ratio",
             f"{kpis['clean_pct']:.2f}%",
             f"{kpis['clean_records']:,} uncorrupted records",
-            accent="emerald"
+            accent="emerald",
+            icon="🛡️"
         )
     with c7:
         components.render_kpi_card(
             "Sensor Anomalies",
             f"{kpis['sensor_anomalies']:,}",
             f"{kpis['sensor_anomaly_pct']:.2f}% of active records",
-            accent="amber"
+            accent="amber",
+            icon="⚠️"
         )
     with c8:
         components.render_kpi_card(
-            "Simulated Lamp Outages",
+            "Simulated Outages",
             f"{kpis['lamp_faults']:,}",
             f"{kpis['lamp_fault_pct']:.2f}% (zero-output events)",
-            accent="crimson"
+            accent="critical",
+            icon="🚨"
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    components.render_section_header("Diurnal & Temporal Grid Load Patterns")
+    components.render_section_header("Diurnal & Temporal Grid Load Patterns", "High-resolution time-series load curves and composite diurnal profiles")
 
     col_chart1, col_chart2 = st.columns(2)
 
@@ -224,16 +239,16 @@ if nav_page == "📊 Executive Overview":
         fig_daily.add_trace(go.Scatter(
             x=daily_df['date_dt'], y=daily_df['total_energy'],
             mode='lines', name='Daily Total (kWh)',
-            line=dict(color='rgba(0, 229, 255, 0.4)', width=1.2)
+            line=dict(color='rgba(34, 211, 238, 0.4)', width=1.2)
         ))
         fig_daily.add_trace(go.Scatter(
             x=daily_df['date_dt'], y=daily_df['rolling_7d'],
             mode='lines', name='7-Day Centered MA',
-            line=dict(color='#00e5ff', width=2.5)
+            line=dict(color='#22D3EE', width=2.5)
         ))
         fig_daily.update_layout(
             title="365-Day Energy Consumption Trend (2025)",
-            xaxis_title="Date", yaxis_title="Total Daily Energy (kWh)"
+            xaxis_title="Calendar Date", yaxis_title="Total Daily Energy (kWh)"
         )
         components.style_plotly_chart(fig_daily, height=360)
         st.plotly_chart(fig_daily, use_container_width=True)
@@ -245,12 +260,12 @@ if nav_page == "📊 Executive Overview":
         fig_hourly.add_trace(go.Bar(
             x=hourly_df['hour'], y=hourly_df['total_energy'],
             name='Total Grid Energy (kWh)',
-            marker=dict(color='#38bdf8', line=dict(color='#0284c7', width=1))
+            marker=dict(color='#38BDF8', line=dict(color='#0284C7', width=1))
         ))
         fig_hourly.add_trace(go.Scatter(
             x=hourly_df['hour'], y=hourly_df['mean_energy'] * kpis['unique_streets'],
             mode='lines+markers', name='Expected Active Load',
-            line=dict(color='#f59e0b', width=2)
+            line=dict(color='#FBBF24', width=2)
         ))
         fig_hourly.update_layout(
             title="Diurnal Hourly Profile (All Grid Segments Combined)",
@@ -268,15 +283,15 @@ if nav_page == "📊 Executive Overview":
         fig_zone = go.Figure()
         fig_zone.add_trace(go.Bar(
             x=zone_df['zone_type'], y=zone_df['total_energy'],
-            name='Observed Energy (kWh)', marker_color='#00e5ff'
+            name='Observed Energy (kWh)', marker_color='#22D3EE'
         ))
         fig_zone.add_trace(go.Bar(
             x=zone_df['zone_type'], y=zone_df['full_output'],
-            name='Full Output Reference (kWh)', marker_color='rgba(255, 255, 255, 0.25)'
+            name='Full Output Reference (kWh)', marker_color='rgba(255, 255, 255, 0.22)'
         ))
         fig_zone.update_layout(
             title="Energy Consumption & Benchmark by Zone Classification",
-            xaxis_title="Zone Type", yaxis_title="Energy (kWh)",
+            xaxis_title="Zone Classification", yaxis_title="Energy (kWh)",
             barmode='group'
         )
         components.style_plotly_chart(fig_zone, height=350)
@@ -289,24 +304,21 @@ if nav_page == "📊 Executive Overview":
         )
         fig_scatter = px.scatter(
             night_sample, x='traffic_count', y='measured_dimming_pct',
-            color='zone_type', opacity=0.5,
+            color='zone_type', opacity=0.6,
             title="Night Illumination Level (%) vs. Vehicular Traffic Demand",
             labels={'traffic_count': 'Traffic Count (Vehicles/hr)', 'measured_dimming_pct': 'Measured Dimming (%)'}
         )
         components.style_plotly_chart(fig_scatter, height=350)
         st.plotly_chart(fig_scatter, use_container_width=True)
 
-    # Executive Summary Callout Box
-    st.markdown("""
-    <div class="callout-box">
-        <strong>Executive Analytical Findings:</strong>
+    # Executive Analytical Findings Callout Box
+    components.render_callout("""
         <ul>
-            <li><strong>Diurnal Concentration:</strong> Over 99.7% of total grid electrical energy is consumed between 18:00 and 06:00, peaking at 20:00–21:00 during evening vehicular rush hours.</li>
+            <li><strong>Diurnal Concentration:</strong> Over 99.8% of total grid electrical energy is consumed between 18:00 and 06:00, peaking during evening vehicular rush hours (19:00–21:00).</li>
             <li><strong>Infrastructure Disparities:</strong> Arterial zones consume the highest aggregate energy due to road width and fixture density. Conversely, Campus streets exhibit the highest specific energy per fixture (557 kWh/fixture) due to legacy High-Pressure Sodium lamps.</li>
             <li><strong>Static Mode Inefficiency:</strong> The 6 Fixed-mode circuits run at constant 100% capacity all night, producing 0.00% baseline savings and presenting the primary opportunity for schedule optimization.</li>
         </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    """, title="Executive Analytical Findings:", variant="info")
 
     components.render_synthetic_disclosure()
 
@@ -329,7 +341,8 @@ elif nav_page == "⚡ Energy Consumption Analytics":
                 mode_hourly, x='hour', y='energy_consumption_kwh', color='control_mode',
                 title="Average Hourly Consumption by Installed Control Mode",
                 labels={'hour': 'Hour of Day (0–23)', 'energy_consumption_kwh': 'Avg Energy (kWh / segment-hr)'},
-                markers=True
+                markers=True,
+                color_discrete_map={'Fixed': '#F87171', 'Scheduled dimming': '#FBBF24', 'Adaptive dimming': '#22D3EE'}
             )
             components.style_plotly_chart(fig_mode_h, height=380)
             st.plotly_chart(fig_mode_h, use_container_width=True)
@@ -342,7 +355,7 @@ elif nav_page == "⚡ Energy Consumption Analytics":
                 dow_hourly, x='hour', y='energy_consumption_kwh', color='Day Type',
                 title="Diurnal Consumption: Weekdays vs. Weekends",
                 labels={'hour': 'Hour of Day (0–23)', 'energy_consumption_kwh': 'Avg Energy (kWh / segment-hr)'},
-                markers=True, color_discrete_sequence=['#00e5ff', '#f59e0b']
+                markers=True, color_discrete_sequence=['#22D3EE', '#FBBF24']
             )
             components.style_plotly_chart(fig_dow, height=380)
             st.plotly_chart(fig_dow, use_container_width=True)
@@ -352,26 +365,32 @@ elif nav_page == "⚡ Energy Consumption Analytics":
         fig_monthly = go.Figure()
         fig_monthly.add_trace(go.Bar(
             x=monthly_df['month_name'], y=monthly_df['total_energy'],
-            name='Total Monthly Energy (kWh)', marker_color='#38bdf8', yaxis='y1'
+            name='Total Monthly Energy (kWh)', marker_color='#38BDF8', yaxis='y1'
         ))
         fig_monthly.add_trace(go.Scatter(
             x=monthly_df['month_name'], y=monthly_df['energy_kwh_per_day'],
-            name='Daily-Normalized Energy (kWh/day)', line=dict(color='#10b981', width=3),
+            name='Daily-Normalized Energy (kWh/day)', line=dict(color='#34D399', width=3),
             yaxis='y2', mode='lines+markers'
         ))
         fig_monthly.update_layout(
             title="Monthly Energy Consumption: Total vs. Daily-Normalized (kWh/day)",
             xaxis_title="Month of Year (2025)",
-            yaxis=dict(title=dict(text="Total Monthly Energy (kWh)", font=dict(color="#38bdf8"))),
+            yaxis=dict(title=dict(text="Total Monthly Energy (kWh)", font=dict(color="#38BDF8"))),
             yaxis2=dict(
-                title=dict(text="Daily-Normalized Energy (kWh/day)", font=dict(color="#10b981")),
+                title=dict(text="Daily-Normalized Energy (kWh/day)", font=dict(color="#34D399")),
                 overlaying='y', side='right'
             )
         )
-        components.style_plotly_chart(fig_monthly, height=400)
+        components.style_plotly_chart(fig_monthly, height=390)
         st.plotly_chart(fig_monthly, use_container_width=True)
 
-        st.caption("💡 **Analytical Insight:** Notice how daily-normalized energy drops from ~559.5 kWh/day in Jan–May down to ~507.0 kWh/day in Jul–Nov. Earlier sunrises and later sunsets in summer shorten the dark operating window from 12.0 hours to 11.0 hours, producing an organic 9.4% seasonal reduction.")
+        components.render_callout(
+            "Notice how daily-normalized energy drops from ~559.5 kWh/day in Jan–May down to ~507.0 kWh/day in Jul–Nov. "
+            "Earlier sunrises and later sunsets in summer shorten the dark operating window from 12.0 hours to 11.0 hours, "
+            "producing an organic 9.4% seasonal reduction that must be accounted for in municipal baseline budgeting.",
+            title="Seasonal Solar Dynamics:",
+            variant="info"
+        )
 
     with tab_infra:
         col_i1, col_i2 = st.columns(2)
@@ -388,7 +407,7 @@ elif nav_page == "⚡ Energy Consumption Analytics":
                 tech_agg, x='lamp_technology', y='kwh_per_luminaire', color='lamp_technology',
                 title="Specific Energy Consumption by Lamp Technology (kWh / fixture-year)",
                 labels={'lamp_technology': 'Technology', 'kwh_per_luminaire': 'kWh / Luminaire'},
-                color_discrete_map={'LED': '#10b981', 'High-pressure sodium (HPS)': '#ef4444'}
+                color_discrete_map={'LED': '#34D399', 'High-pressure sodium (HPS)': '#F87171'}
             )
             components.style_plotly_chart(fig_tech, height=370)
             st.plotly_chart(fig_tech, use_container_width=True)
@@ -405,7 +424,7 @@ elif nav_page == "⚡ Energy Consumption Analytics":
                 mode_agg, x='control_mode', y='savings_pct', color='control_mode',
                 title="Baseline Reference Savings % by Installed Control Mode",
                 labels={'control_mode': 'Control Mode', 'savings_pct': 'Savings vs. Full Output (%)'},
-                color_discrete_map={'Fixed': '#ef4444', 'Scheduled dimming': '#f59e0b', 'Adaptive dimming': '#00e5ff'}
+                color_discrete_map={'Fixed': '#F87171', 'Scheduled dimming': '#FBBF24', 'Adaptive dimming': '#22D3EE'}
             )
             components.style_plotly_chart(fig_mode_sav, height=370)
             st.plotly_chart(fig_mode_sav, use_container_width=True)
@@ -449,8 +468,7 @@ elif nav_page == "🛣️ Street & Infrastructure Explorer":
     )
 
     # Street Selector Deep-Dive
-    st.markdown("<br>", unsafe_allow_html=True)
-    components.render_section_header("Individual Segment Deep-Dive Telemetry")
+    components.render_section_header("Individual Segment Deep-Dive Telemetry", "Inspect corridor-specific diurnal profiles, traffic response, and hardware architecture")
 
     all_streets = sorted(df_view['street_id'].unique().tolist())
     selected_street = st.selectbox("Select Street Segment to Inspect:", all_streets, index=0)
@@ -461,16 +479,16 @@ elif nav_page == "🛣️ Street & Infrastructure Explorer":
     # Street Telemetry Cards
     sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1:
-        components.render_kpi_card("Segment Identity", f"{s_meta['street_id']}", f"{s_meta['street_name']}", accent="cyan")
+        components.render_kpi_card("Segment Identity", f"{s_meta['street_id']}", f"{s_meta['street_name']}", accent="cyan", icon="📍")
     with sc2:
-        components.render_kpi_card("Hardware Architecture", f"{s_meta['lamp_technology']}", f"{s_meta['luminaire_count']} fixtures @ {s_meta['rated_watts_per_luminaire']:.0f}W", accent="indigo")
+        components.render_kpi_card("Hardware Architecture", f"{s_meta['lamp_technology']}", f"{s_meta['luminaire_count']} fixtures @ {s_meta['rated_watts_per_luminaire']:.0f}W", accent="purple", icon="💡")
     with sc3:
-        components.render_kpi_card("Control Strategy", f"{s_meta['control_mode']}", f"Road Class: {s_meta['road_class']}", accent="amber")
+        components.render_kpi_card("Control Strategy", f"{s_meta['control_mode']}", f"Road Class: {s_meta['road_class']}", accent="amber", icon="⚙️")
     with sc4:
         s_total = street_df[street_df['is_valid_energy']]['energy_consumption_kwh'].sum()
         s_full = street_df[street_df['is_valid_energy']]['full_output_reference_kwh'].sum()
         s_sav = (s_full - s_total) / s_full * 100 if s_full > 0 else 0
-        components.render_kpi_card("Annual Energy", f"{s_total:,.1f} kWh", f"Baseline Savings: {s_sav:.1f}%", accent="emerald")
+        components.render_kpi_card("Annual Energy", f"{s_total:,.1f} kWh", f"Baseline Savings: {s_sav:.1f}%", accent="emerald", icon="⚡")
 
     # Diurnal Profile & Timeline for Selected Street
     col_s1, col_s2 = st.columns(2)
@@ -491,7 +509,7 @@ elif nav_page == "🛣️ Street & Infrastructure Explorer":
             s_night, x='traffic_count', y='measured_dimming_pct',
             title=f"Traffic vs. Dimming Response: {selected_street}",
             labels={'traffic_count': 'Vehicles / Hour', 'measured_dimming_pct': 'Measured Dimming (%)'},
-            opacity=0.6, color_discrete_sequence=['#00e5ff']
+            opacity=0.6, color_discrete_sequence=['#22D3EE']
         )
         components.style_plotly_chart(fig_s_dim, height=350)
         st.plotly_chart(fig_s_dim, use_container_width=True)
@@ -538,9 +556,15 @@ elif nav_page == "🚦 Traffic, Weather & Lighting Dynamics":
             title=f"{corr_method} Matrix (Operational, Environmental & Infrastructure Telemetry)",
             aspect="auto"
         )
-        components.style_plotly_chart(fig_corr, height=600)
+        components.style_plotly_chart(fig_corr, height=580)
         st.plotly_chart(fig_corr, use_container_width=True)
-        st.caption("⚠️ **Methodological Note:** Correlation does not establish causation. Observed associations reflect generative controller rules and circuit physics, not independent real-world laws.")
+        components.render_callout(
+            "Correlation does not establish causation. Observed associations reflect generative controller rules "
+            "and circuit physics, not independent real-world laws. For example, the high correlation between commanded "
+            "dimming and energy reflects the mathematical component power equations.",
+            title="Methodological Note:",
+            variant="warning"
+        )
 
     with tab_scatter:
         col_sc1, col_sc2, col_sc3 = st.columns(3)
@@ -571,7 +595,7 @@ elif nav_page == "🚦 Traffic, Weather & Lighting Dynamics":
                 title="Twilight Switching: Ambient Lux vs. Commanded Dimming",
                 labels={'ambient_light_lux': 'Ambient Light (Lux, Log Scale)', 'commanded_dimming_pct': 'Commanded Dimming (%)'}
             )
-            fig_twilight.add_vline(x=50.0, line_dash="dash", line_color="#ef4444", annotation_text="50 Lux Switching Threshold")
+            fig_twilight.add_vline(x=50.0, line_dash="dash", line_color="#F87171", annotation_text="50 Lux Switching Threshold")
             components.style_plotly_chart(fig_twilight, height=380)
             st.plotly_chart(fig_twilight, use_container_width=True)
 
@@ -598,14 +622,14 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
     # Quality KPIs
     qc1, qc2, qc3, qc4 = st.columns(4)
     with qc1:
-        components.render_kpi_card("Validated Clean Records", f"{kpis['clean_records']:,}", f"{kpis['clean_pct']:.2f}% of active population", accent="emerald")
+        components.render_kpi_card("Validated Clean Records", f"{kpis['clean_records']:,}", f"{kpis['clean_pct']:.2f}% of active population", accent="emerald", icon="🛡️")
     with qc2:
-        components.render_kpi_card("Sensor Anomaly Flags", f"{kpis['sensor_anomalies']:,}", f"{kpis['sensor_anomaly_pct']:.2f}% deliberate spikes/missingness", accent="amber")
+        components.render_kpi_card("Sensor Anomaly Flags", f"{kpis['sensor_anomalies']:,}", f"{kpis['sensor_anomaly_pct']:.2f}% deliberate spikes/missingness", accent="amber", icon="⚠️")
     with qc3:
-        components.render_kpi_card("Simulated Lamp Faults", f"{kpis['lamp_faults']:,}", "Operational zero-output outages", accent="crimson")
+        components.render_kpi_card("Simulated Lamp Faults", f"{kpis['lamp_faults']:,}", "Operational zero-output outages", accent="critical", icon="🚨")
     with qc4:
         meter_spikes = df_view['sensor_anomaly_type'].str.contains('Energy-meter spike', na=False).sum()
-        components.render_kpi_card("Meter Spikes", f"{meter_spikes:,}", "Excluded from valid energy comparisons", accent="indigo")
+        components.render_kpi_card("Meter Spikes", f"{meter_spikes:,}", "Excluded from valid energy comparisons", accent="purple", icon="⚡")
 
     col_q1, col_q2 = st.columns(2)
 
@@ -634,7 +658,7 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
         fig_miss = px.bar(
             missing_s, x='Feature', y='Missing Count', text_auto=True,
             title="Missing Sensor Readings (Controlled Synthetic Dropouts)",
-            color_discrete_sequence=['#38bdf8']
+            color_discrete_sequence=['#38BDF8']
         )
         components.style_plotly_chart(fig_miss, height=380)
         st.plotly_chart(fig_miss, use_container_width=True)
@@ -656,13 +680,13 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
         mime="text/csv"
     )
 
-    st.markdown("""
-    <div class="callout-box">
-        <strong>Academic Accounting Safeguard:</strong><br>
-        Simulated lighting faults (101 records) represent service failures where luminaires were inoperative during required hours. 
-        In our analytical pipeline, <strong>outages are strictly segregated and never counted as successful energy savings</strong>.
-    </div>
-    """, unsafe_allow_html=True)
+    components.render_callout(
+        "Simulated lighting faults (101 records) represent service failures where luminaires were inoperative during required dark hours. "
+        "In our analytical pipeline, <strong>outages are strictly segregated and never counted as successful energy savings</strong>. "
+        "Similarly, energy-meter spikes are excluded from baseline benchmarking to prevent distorted metrics.",
+        title="Academic Accounting Safeguard:",
+        variant="warning"
+    )
 
     components.render_synthetic_disclosure()
 
@@ -710,8 +734,7 @@ elif nav_page == "🚀 Energy Optimization Simulator":
     )
 
     if sim_results:
-        st.markdown("<br>", unsafe_allow_html=True)
-        components.render_section_header("Modeled Scenario Performance Summary")
+        components.render_section_header("Modeled Scenario Performance Summary", "Comparative projections against observed baseline and unconstrained full-output load")
 
         # Scenario Table
         st.dataframe(
@@ -734,7 +757,7 @@ elif nav_page == "🚀 Energy Optimization Simulator":
                 sum_df, x='Scenario', y='Annual Energy (kWh)', color='Scenario',
                 title="Annual Grid Energy Consumption by Scenario Profile",
                 text_auto='.0f',
-                color_discrete_sequence=['#38bdf8', '#10b981', '#00e5ff', '#ef4444']
+                color_discrete_sequence=['#38BDF8', '#34D399', '#22D3EE', '#F87171']
             )
             components.style_plotly_chart(fig_bar_scen, height=380, show_legend=False)
             st.plotly_chart(fig_bar_scen, use_container_width=True)
@@ -743,10 +766,10 @@ elif nav_page == "🚀 Energy Optimization Simulator":
             # Diurnal Profile Comparison
             h_sim = sim_results['hourly_df']
             fig_diurnal_scen = go.Figure()
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Baseline'], name='Baseline Observed', line=dict(color='#38bdf8', width=2.5)))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 1'], name='Scenario 1: Conservative', line=dict(color='#10b981', width=2, dash='dash')))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 2'], name='Scenario 2: Adaptive (Recommended)', line=dict(color='#00e5ff', width=2.5)))
-            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 3'], name='Scenario 3: Eco Deep', line=dict(color='#ef4444', width=1.8, dash='dot')))
+            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Baseline'], name='Baseline Observed', line=dict(color='#38BDF8', width=2.5)))
+            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 1'], name='Scenario 1: Conservative', line=dict(color='#34D399', width=2, dash='dash')))
+            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 2'], name='Scenario 2: Adaptive (Recommended)', line=dict(color='#22D3EE', width=2.5)))
+            fig_diurnal_scen.add_trace(go.Scatter(x=h_sim['Hour'], y=h_sim['Scenario 3'], name='Scenario 3: Eco Deep', line=dict(color='#F87171', width=1.8, dash='dot')))
             fig_diurnal_scen.update_layout(
                 title="24-Hour Diurnal Energy Profile Across Scenarios",
                 xaxis_title="Hour of Day (0–23)", yaxis_title="Average Energy (kWh / segment-hr)",
@@ -761,21 +784,20 @@ elif nav_page == "🚀 Energy Optimization Simulator":
         fig_zone_scen = px.bar(
             z_melt, x='Zone', y='kWh', color='Profile', barmode='group',
             title="Zone-Level Annual Energy Comparison Across Scenarios",
-            color_discrete_sequence=['#38bdf8', '#10b981', '#00e5ff', '#ef4444']
+            color_discrete_sequence=['#38BDF8', '#34D399', '#22D3EE', '#F87171']
         )
         components.style_plotly_chart(fig_zone_scen, height=400)
         st.plotly_chart(fig_zone_scen, use_container_width=True)
 
     # Engineering Compliance Caveat
-    st.markdown("""
-    <div class="callout-box">
-        <strong>Civil Engineering & Photometric Disclaimer:</strong><br>
-        Controller setpoints (commanded dimming %) are <strong>not proof of achieved road-surface illumination</strong>. 
-        Physical municipal deployment requires on-site photometric validation using luminance cameras to guarantee 
-        compliance with civil standards (EN 13201 / IESNA RP-8 / IS 1944). In event of communication failure or sensor 
-        dropouts, fixtures must automatically revert to fail-safe 100% full illumination.
-    </div>
-    """, unsafe_allow_html=True)
+    components.render_callout(
+        "Controller setpoints (commanded dimming %) are <strong>not proof of achieved road-surface illumination</strong>. "
+        "Physical municipal deployment requires on-site photometric validation using luminance cameras to guarantee "
+        "compliance with civil standards (EN 13201 / IESNA RP-8 / IS 1944). In event of communication failure or sensor "
+        "dropouts, fixtures must automatically revert to fail-safe 100% full illumination.",
+        title="Civil Engineering & Photometric Disclaimer:",
+        variant="warning"
+    )
 
     components.render_synthetic_disclosure()
 
@@ -866,7 +888,7 @@ elif nav_page == "📥 Reports & Data Export":
         )
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("#### 📑 Executive Findings Report (Markdown/Text)")
+    components.render_section_header("Executive Findings Documentation", "Direct access to the comprehensive project findings report")
 
     # Read existing findings report if available or generate snapshot
     findings_path = Path("EDA_Findings_Summary.md")
