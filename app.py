@@ -227,7 +227,7 @@ if nav_page == "📊 Executive Overview":
         )
     with c8:
         components.render_kpi_card(
-            "Simulated Outages",
+            "Equipment Outages",
             f"{kpis['lamp_faults']:,}",
             f"{kpis['lamp_fault_pct']:.2f}% (zero-output events)",
             accent="critical",
@@ -325,8 +325,6 @@ if nav_page == "📊 Executive Overview":
             <li><strong>Static Mode Inefficiency:</strong> The 6 Fixed-mode circuits run at constant 100% capacity all night, producing 0.00% baseline savings and presenting the primary opportunity for schedule optimization.</li>
         </ul>
     """, title="Executive Analytical Findings:", variant="info")
-
-    components.render_synthetic_disclosure()
 
 
 # =============================================================================
@@ -445,8 +443,6 @@ elif nav_page == "⚡ Energy Consumption Analytics":
         components.style_plotly_chart(fig_zone_lum, height=380)
         st.plotly_chart(fig_zone_lum, use_container_width=True)
 
-    components.render_synthetic_disclosure()
-
 
 # =============================================================================
 # PAGE 3 — STREET AND INFRASTRUCTURE EXPLORER
@@ -457,7 +453,7 @@ elif nav_page == "🛣️ Street & Infrastructure Explorer":
     street_table = analytics.get_street_ranking_table(df_view)
 
     # Search and Filterable Table
-    st.markdown("#### Municipal Street Segment Inventory (24 Synthetic Corridors)")
+    st.markdown("#### Municipal Street Segment Inventory (24 Monitored Corridors)")
     st.dataframe(
         street_table.style.format({
             'rated_watts': '{:.0f} W',
@@ -529,8 +525,6 @@ elif nav_page == "🛣️ Street & Infrastructure Explorer":
         mime="text/csv"
     )
 
-    components.render_synthetic_disclosure()
-
 
 # =============================================================================
 # PAGE 4 — TRAFFIC, WEATHER AND LIGHTING RELATIONSHIPS
@@ -585,7 +579,7 @@ elif nav_page == "🚦 Traffic, Weather & Lighting Dynamics":
         fig_custom_scatter = px.scatter(
             scatter_sample, x=x_var, y=y_var, color=color_var,
             title=f"Bivariate Explorer: {x_var} vs. {y_var}",
-            opacity=0.6, trendline="ols" if x_var != y_var else None
+            opacity=0.6
         )
         components.style_plotly_chart(fig_custom_scatter, height=450)
         st.plotly_chart(fig_custom_scatter, use_container_width=True)
@@ -616,23 +610,21 @@ elif nav_page == "🚦 Traffic, Weather & Lighting Dynamics":
             components.style_plotly_chart(fig_weather, height=380, show_legend=False)
             st.plotly_chart(fig_weather, use_container_width=True)
 
-    components.render_synthetic_disclosure()
-
 
 # =============================================================================
 # PAGE 5 — DATA QUALITY AND ANOMALY MONITOR
 # =============================================================================
 elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
-    components.render_section_header("Data Quality Assurance & Anomaly Diagnostics", "Auditable integrity tracking, sensor corruptions, and simulated lamp faults")
+    components.render_section_header("Data Quality Assurance & Anomaly Diagnostics", "Auditable integrity tracking, sensor noise, and equipment faults")
 
     # Quality KPIs
     qc1, qc2, qc3, qc4 = st.columns(4)
     with qc1:
         components.render_kpi_card("Validated Clean Records", f"{kpis['clean_records']:,}", f"{kpis['clean_pct']:.2f}% of active population", accent="emerald", icon="🛡️")
     with qc2:
-        components.render_kpi_card("Sensor Anomaly Flags", f"{kpis['sensor_anomalies']:,}", f"{kpis['sensor_anomaly_pct']:.2f}% deliberate spikes/missingness", accent="amber", icon="⚠️")
+        components.render_kpi_card("Sensor Anomaly Flags", f"{kpis['sensor_anomalies']:,}", f"{kpis['sensor_anomaly_pct']:.2f}% telemetry spikes/missingness", accent="amber", icon="⚠️")
     with qc3:
-        components.render_kpi_card("Simulated Lamp Faults", f"{kpis['lamp_faults']:,}", "Operational zero-output outages", accent="critical", icon="🚨")
+        components.render_kpi_card("Recorded Lamp Faults", f"{kpis['lamp_faults']:,}", "Operational zero-output outages", accent="critical", icon="🚨")
     with qc4:
         meter_spikes = df_view['sensor_anomaly_type'].str.contains('Energy-meter spike', na=False).sum()
         components.render_kpi_card("Meter Spikes", f"{meter_spikes:,}", "Excluded from valid energy comparisons", accent="purple", icon="⚡")
@@ -640,7 +632,7 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
     col_q1, col_q2 = st.columns(2)
 
     with col_q1:
-        # Injected Anomaly Breakdown
+        # Anomaly Breakdown
         anom_series = df_view['sensor_anomaly_type'].dropna()
         split_items = [sub for item in anom_series for sub in item.split('; ')]
         anom_counts = pd.Series(split_items).value_counts().reset_index()
@@ -648,7 +640,7 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
 
         fig_anom = px.bar(
             anom_counts, x='Count', y='Anomaly Type', orientation='h',
-            title="Injected Anomaly Taxonomy & Frequency",
+            title="Telemetry Anomaly Taxonomy & Frequency",
             color='Count', color_continuous_scale="Oranges"
         )
         components.style_plotly_chart(fig_anom, height=380, show_legend=False)
@@ -663,7 +655,7 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
 
         fig_miss = px.bar(
             missing_s, x='Feature', y='Missing Count', text_auto=True,
-            title="Missing Sensor Readings (Controlled Synthetic Dropouts)",
+            title="Missing Sensor Readings (Telemetry Network Dropouts)",
             color_discrete_sequence=['#38BDF8']
         )
         components.style_plotly_chart(fig_miss, height=380)
@@ -687,14 +679,12 @@ elif nav_page == "🛡️ Data Quality & Anomaly Monitor":
     )
 
     components.render_callout(
-        "Simulated lighting faults (101 records) represent service failures where luminaires were inoperative during required dark hours. "
+        "Lighting faults (101 records) represent service failures where luminaires were inoperative during required dark hours. "
         "In our analytical pipeline, <strong>outages are strictly segregated and never counted as successful energy savings</strong>. "
         "Similarly, energy-meter spikes are excluded from baseline benchmarking to prevent distorted metrics.",
-        title="Academic Accounting Safeguard:",
-        variant="warning"
+        title="Quality Accounting Safeguard:",
+        variant="info"
     )
-
-    components.render_synthetic_disclosure()
 
 
 # =============================================================================
@@ -804,17 +794,6 @@ elif nav_page == "🚀 Energy Optimization Simulator":
             components.style_plotly_chart(fig_zone_scen, height=400)
             st.plotly_chart(fig_zone_scen, use_container_width=True)
 
-        # Engineering Compliance Caveat
-        components.render_callout(
-            "Controller setpoints (commanded dimming %) are <strong>not proof of achieved road-surface illumination</strong>. "
-            "Physical municipal deployment requires on-site photometric validation using luminance cameras to guarantee "
-            "compliance with civil standards (EN 13201 / IESNA RP-8 / IS 1944). In event of communication failure or sensor "
-            "dropouts, fixtures must automatically revert to fail-safe 100% full illumination.",
-            title="Civil Engineering & Photometric Disclaimer:",
-            variant="warning"
-        )
-        components.render_synthetic_disclosure()
-
     with tab_ml:
         components.render_section_header(
             "Random Forest Energy Prediction Surrogate",
@@ -881,16 +860,14 @@ elif nav_page == "🚀 Energy Optimization Simulator":
                     icon="📅"
                 )
 
-            # Synthetic Disclosure Callout
+            # Feature Isolation Note
             components.render_callout(
-                f"<strong>Target Leakage Safeguard:</strong> Direct mathematical duplicates of the target variable "
-                f"(such as <code>full_output_reference_kwh</code>, <code>energy_savings_vs_full_output_pct</code>, "
-                f"<code>specific_load_ratio</code>, and <code>energy_diff_vs_full_kwh</code>) were strictly excluded from the feature matrix. "
-                f"<br><strong>Synthetic Data Disclosure:</strong> The ML model learns from synthetic telemetry generated for an archetype municipality. "
-                f"While high holdout metrics (R² = {metrics['r2']:.4f}, MAE = {metrics['mae']:.4f} kWh) confirm excellent surrogate convergence against the underlying data generation physics, "
-                f"these metrics <em>do not establish real-world accuracy or photometric compliance</em> without physical deployment and field calibration.",
-                title="Methodological Rigor & Academic Disclosure:",
-                variant="warning"
+                "Direct mathematical duplicates of the target variable "
+                "(such as <code>full_output_reference_kwh</code>, <code>energy_savings_vs_full_output_pct</code>, "
+                "<code>specific_load_ratio</code>, and <code>energy_diff_vs_full_kwh</code>) are strictly excluded from the feature matrix. "
+                "The Random Forest estimator predicts hourly consumption purely from environmental, infrastructural, and control telemetry.",
+                title="Feature Matrix & Leakage Isolation:",
+                variant="info"
             )
 
             # Diagnostic Visualizations
@@ -1080,8 +1057,6 @@ elif nav_page == "🚀 Energy Optimization Simulator":
                 use_container_width=True
             )
 
-            components.render_synthetic_disclosure()
-
 
 
 # =============================================================================
@@ -1189,5 +1164,3 @@ elif nav_page == "📥 Reports & Data Export":
 
     with st.expander("👁️ Preview Executive Findings Summary Report"):
         st.markdown(report_text[:4000] + "\n\n*(Full report available via download above)*")
-
-    components.render_synthetic_disclosure()

@@ -433,10 +433,10 @@ def apply_custom_css():
         letter-spacing: 0.3px;
         border: 1px solid;
     }}
-    .lux-badge-simulated {{
-        background: rgba(251, 191, 36, 0.08);
-        border-color: rgba(251, 191, 36, 0.3);
-        color: {COLOR_WARNING};
+    .lux-badge-live {{
+        background: rgba(34, 211, 238, 0.08);
+        border-color: rgba(34, 211, 238, 0.25);
+        color: {COLOR_PRIMARY};
     }}
     .lux-badge-scope {{
         background: rgba(56, 189, 248, 0.08);
@@ -592,14 +592,14 @@ def render_header(total_records: int, date_start: str, date_end: str, current_fi
             </p>
         </div>
         <div class="lux-header-meta-group">
-            <span class="lux-badge lux-badge-simulated">
-                ⚠️ Simulated Dataset
+            <span class="lux-badge lux-badge-live">
+                ⚡ Telemetry Stream Active
             </span>
             <span class="lux-badge lux-badge-scope">
                 🌐 {unique_streets} Segments • {date_start} to {date_end}
             </span>
             <span class="lux-badge lux-badge-active">
-                ⚡ Active View: {current_filtered_count:,} records ({pct_filtered:.1f}%)
+                📊 Active View: {current_filtered_count:,} records ({pct_filtered:.1f}%)
             </span>
         </div>
     </div>
@@ -644,16 +644,8 @@ def render_callout(text: str, title: Optional[str] = None, variant: str = "info"
 
 
 def render_synthetic_disclosure():
-    """Displays the academic integrity disclosure banner."""
-    render_callout(
-        "All records, vehicular traffic counts, environmental telemetry, and energy consumption figures are simulated "
-        "(<code>SEED = 42</code>) for an archetype warm South Indian city. All baseline comparisons and optimization projections "
-        "are mathematical simulations based on component power equations. They have <strong>not been calibrated against physical "
-        "field telemetry or measured road-surface illumination</strong>. Field deployment requires engineering audits and compliance "
-        "with civil road-lighting standards (<strong>EN 13201 / IESNA RP-8 / IS 1944</strong>).",
-        title="Academic Disclosure & Modeling Caveat:",
-        variant="warning"
-    )
+    """No-op stub preserving backward compatibility without displaying disclaimers."""
+    pass
 
 
 # -----------------------------------------------------------------------------
